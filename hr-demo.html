@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HRBase — ระบบทรัพยากรบุคคล</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAFAF8;
+    --surface:#FFFFFF;
+    --ink:#1C1C1E;
+    --ink-soft:#5C5C5E;
+    --line:#E8E6E0;
+    --accent:#5B6B5B;
+    --accent-soft:#EEF1EC;
+    --warn:#9B7B4F;
+    --warn-soft:#F6EFE5;
+    --danger:#A14A3E;
+    --danger-soft:#F7E9E6;
+    --radius:10px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:"Inter","Noto Sans Thai",sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    font-size:14px;
+    line-height:1.5;
+  }
+  .mono{font-family:"IBM Plex Mono",monospace;}
+
+  /* Layout */
+  .app{
+    display:grid;
+    grid-template-columns:220px 1fr;
+    min-height:100vh;
+  }
+
+  /* Sidebar */
+  .sidebar{
+    background:var(--surface);
+    border-right:1px solid var(--line);
+    padding:24px 16px;
+    display:flex;
+    flex-direction:column;
+    position:sticky;
+    top:0;
+    height:100vh;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:0 8px 28px 8px;
+  }
+  .brand-mark{
+    width:28px; height:28px;
+    border-radius:7px;
+    background:var(--accent);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:700; font-size:13px;
+    flex-shrink:0;
+  }
+  .brand-name{font-weight:700; font-size:15px; letter-spacing:-0.01em;}
+  .brand-sub{font-size:11px; color:var(--ink-soft);}
+
+  .nav-group{margin-bottom:20px;}
+  .nav-label{
+    font-size:11px;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    padding:0 8px 8px 8px;
+    font-weight:600;
+  }
+  .nav-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:9px 10px;
+    border-radius:8px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    font-size:13.5px;
+    font-weight:500;
+    transition:background .15s, color .15s;
+    margin-bottom:2px;
+  }
+  .nav-item svg{width:17px; height:17px; flex-shrink:0;}
+  .nav-item:hover{background:var(--accent-soft); color:var(--ink);}
+  .nav-item.active{background:var(--accent); color:#fff;}
+  .nav-item.active svg{stroke:#fff;}
+
+  .sidebar-footer{
+    margin-top:auto;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 8px 4px 8px;
+  }
+  .avatar-sm{
+    width:32px; height:32px;
+    border-radius:50%;
+    background:var(--accent-soft);
+    color:var(--accent);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:12px;
+    flex-shrink:0;
+  }
+  .user-name{font-size:13px; font-weight:600;}
+  .user-role{font-size:11px; color:var(--ink-soft);}
+
+  /* Main */
+  .main{padding:28px 36px 60px 36px; max-width:1180px;}
+  .page{display:none;}
+  .page.active{display:block; animation:fadeIn .25s ease;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+  .page-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    margin-bottom:24px;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  .page-title{font-size:22px; font-weight:700; letter-spacing:-0.01em;}
+  .page-date{font-size:12.5px; color:var(--ink-soft); margin-top:3px;}
+  .btn{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:9px 16px;
+    border-radius:8px;
+    font-size:13.5px;
+    font-weight:600;
+    cursor:pointer;
+    font-family:inherit;
+    transition:opacity .15s;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn:hover{opacity:.88;}
+  .btn-ghost{
+    background:transparent;
+    color:var(--ink);
+    border:1px solid var(--line);
+  }
+  .btn-ghost:hover{background:var(--accent-soft); opacity:1; border-color:var(--accent);}
+
+  /* Today strip — signature element */
+  .today-strip{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px 20px;
+    margin-bottom:22px;
+  }
+  .today-strip-head{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:14px;
+  }
+  .today-strip-title{font-size:13px; font-weight:600; color:var(--ink-soft);}
+  .today-legend{display:flex; gap:14px; font-size:11.5px; color:var(--ink-soft);}
+  .today-legend span{display:inline-flex; align-items:center; gap:5px;}
+  .dot{width:7px; height:7px; border-radius:50%; display:inline-block;}
+  .timeline{
+    display:flex;
+    align-items:center;
+    gap:3px;
+    overflow-x:auto;
+    padding-bottom:4px;
+  }
+  .tl-person{
+    display:flex; flex-direction:column; align-items:center;
+    gap:6px; min-width:42px; flex-shrink:0;
+  }
+  .tl-bar{
+    width:30px; height:46px;
+    border-radius:6px;
+    position:relative;
+    cursor:default;
+  }
+  .tl-bar.in{background:var(--accent);}
+  .tl-bar.leave{background:var(--warn-soft); border:1.5px dashed var(--warn);}
+  .tl-bar.late{background:linear-gradient(to top, var(--accent) 0 65%, var(--danger-soft) 65% 100%); border:1px solid var(--danger);}
+  .tl-bar.out{background:var(--line);}
+  .tl-init{font-size:10.5px; color:var(--ink-soft); font-weight:600;}
+  .tl-bar:hover::after{
+    content:attr(data-tip);
+    position:absolute;
+    bottom:54px; left:50%;
+    transform:translateX(-50%);
+    background:var(--ink);
+    color:#fff;
+    font-size:11px;
+    padding:5px 9px;
+    border-radius:6px;
+    white-space:nowrap;
+    z-index:5;
+  }
+
+  /* Stat cards */
+  .grid-4{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px;}
+  .grid-2{display:grid; grid-template-columns:1.4fr 1fr; gap:14px; margin-bottom:22px;}
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px 20px;
+  }
+  .stat-label{font-size:12px; color:var(--ink-soft); font-weight:500; margin-bottom:8px;}
+  .stat-value{font-size:26px; font-weight:700; letter-spacing:-0.02em;}
+  .stat-value .unit{font-size:13px; font-weight:500; color:var(--ink-soft); margin-left:3px;}
+  .stat-delta{font-size:12px; margin-top:6px; font-weight:500;}
+  .stat-delta.up{color:var(--accent);}
+  .stat-delta.warn{color:var(--warn);}
+
+  .card-title{font-size:14.5px; font-weight:700; margin-bottom:4px;}
+  .card-sub{font-size:12px; color:var(--ink-soft); margin-bottom:16px;}
+
+  /* Tables */
+  table{width:100%; border-collapse:collapse;}
+  th{
+    text-align:left;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    padding:0 10px 10px 10px;
+    border-bottom:1px solid var(--line);
+  }
+  td{
+    padding:12px 10px;
+    border-bottom:1px solid var(--line);
+    font-size:13.5px;
+    vertical-align:middle;
+  }
+  tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:var(--bg);}
+
+  .person-cell{display:flex; align-items:center; gap:10px;}
+  .avatar{
+    width:34px; height:34px;
+    border-radius:50%;
+    background:var(--accent-soft);
+    color:var(--accent);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:12.5px;
+    flex-shrink:0;
+  }
+  .p-name{font-weight:600; font-size:13.5px;}
+  .p-role{font-size:11.5px; color:var(--ink-soft);}
+
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:4px 10px;
+    border-radius:20px;
+    font-size:11.5px;
+    font-weight:600;
+  }
+  .badge.ok{background:var(--accent-soft); color:var(--accent);}
+  .badge.warn{background:var(--warn-soft); color:var(--warn);}
+  .badge.danger{background:var(--danger-soft); color:var(--danger);}
+  .badge.neutral{background:var(--line); color:var(--ink-soft);}
+  .badge .dot{width:6px; height:6px;}
+
+  .toolbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:16px;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .search{
+    display:flex; align-items:center; gap:8px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:8px 12px;
+    background:var(--surface);
+    min-width:240px;
+  }
+  .search input{
+    border:none; outline:none; font-size:13px; font-family:inherit;
+    width:100%; background:transparent;
+  }
+  .search svg{width:15px; height:15px; stroke:var(--ink-soft); flex-shrink:0;}
+  .filters{display:flex; gap:8px;}
+  .chip{
+    border:1px solid var(--line);
+    background:var(--surface);
+    border-radius:7px;
+    padding:7px 12px;
+    font-size:12.5px;
+    font-weight:500;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .chip.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+
+  /* Leave page */
+  .leave-cards{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:24px;}
+  .leave-type-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px;
+  }
+  .leave-type-top{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;}
+  .leave-icon{
+    width:34px; height:34px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--accent-soft);
+  }
+  .leave-icon svg{width:17px; height:17px; stroke:var(--accent);}
+  .leave-bar-track{height:6px; background:var(--line); border-radius:3px; overflow:hidden; margin-top:10px;}
+  .leave-bar-fill{height:100%; background:var(--accent); border-radius:3px;}
+
+  .req-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:13px 4px; border-bottom:1px solid var(--line);
+    gap:12px; flex-wrap:wrap;
+  }
+  .req-row:last-child{border-bottom:none;}
+  .req-left{display:flex; align-items:center; gap:12px;}
+  .req-meta{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .req-actions{display:flex; gap:8px;}
+  .icon-btn{
+    width:32px; height:32px; border-radius:7px;
+    border:1px solid var(--line); background:var(--surface);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  .icon-btn svg{width:15px; height:15px;}
+  .icon-btn.approve:hover{background:var(--accent-soft); border-color:var(--accent);}
+  .icon-btn.reject:hover{background:var(--danger-soft); border-color:var(--danger);}
+
+  /* Payroll */
+  .payroll-summary{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:22px;}
+  .progress-row{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+  .progress-row:last-child{margin-bottom:0;}
+  .progress-label{width:90px; font-size:12.5px; color:var(--ink-soft); flex-shrink:0;}
+  .progress-track{flex:1; height:8px; background:var(--line); border-radius:4px; overflow:hidden;}
+  .progress-fill{height:100%; background:var(--accent); border-radius:4px;}
+  .progress-val{width:70px; text-align:right; font-size:12.5px; font-weight:600; flex-shrink:0;}
+
+  .slip-link{color:var(--accent); font-weight:600; cursor:pointer; font-size:13px;}
+  .slip-link:hover{text-decoration:underline;}
+
+  /* Employees page detail bits */
+  .emp-table-name{display:flex; align-items:center; gap:10px;}
+
+  ::-webkit-scrollbar{height:6px; width:6px;}
+  ::-webkit-scrollbar-thumb{background:var(--line); border-radius:3px;}
+
+  @media (max-width: 880px){
+    .app{grid-template-columns:1fr;}
+    .sidebar{display:none;}
+    .grid-4{grid-template-columns:repeat(2,1fr);}
+    .grid-2{grid-template-columns:1fr;}
+    .leave-cards, .payroll-summary{grid-template-columns:1fr;}
+    .main{padding:20px;}
+  }
+
+  a, button{ }
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">HR</div>
+      <div>
+        <div class="brand-name">HRBase</div>
+        <div class="brand-sub">บริษัท สมาร์ทเวิร์ค จำกัด</div>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">ภาพรวม</div>
+      <div class="nav-item active" data-page="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        แดชบอร์ด
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">งานบุคคล</div>
+      <div class="nav-item" data-page="employees">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="8" r="2.6"/><path d="M16 13.5c2.6.4 4.5 2.6 4.5 6.5"/></svg>
+        พนักงาน
+      </div>
+      <div class="nav-item" data-page="leave">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/><path d="M8 15l2 2 4-4"/></svg>
+        ลา / เข้างาน
+      </div>
+      <div class="nav-item" data-page="payroll">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="3"/><path d="M6 6V4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V6"/></svg>
+        เงินเดือน
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="avatar-sm">นจ</div>
+      <div>
+        <div class="user-name">นภัสกร จันทร์</div>
+        <div class="user-role">ฝ่ายบุคคล</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <section class="page active" id="page-dashboard">
+      <div class="page-head">
+        <div>
+          <div class="page-title">แดชบอร์ด</div>
+          <div class="page-date">วันศุกร์ที่ 26 มิถุนายน 2569</div>
+        </div>
+        <button class="btn">+ เพิ่มพนักงานใหม่</button>
+      </div>
+
+      <div class="today-strip">
+        <div class="today-strip-head">
+          <div class="today-strip-title">สถานะการเข้างานวันนี้ — ทุกแผนก</div>
+          <div class="today-legend">
+            <span><i class="dot" style="background:var(--accent)"></i> เข้างาน</span>
+            <span><i class="dot" style="background:var(--warn)"></i> ลา</span>
+            <span><i class="dot" style="background:var(--danger)"></i> เข้าสาย</span>
+            <span><i class="dot" style="background:var(--line)"></i> ยังไม่เข้า</span>
+          </div>
+        </div>
+        <div class="timeline" id="timeline"></div>
+      </div>
+
+      <div class="grid-4">
+        <div class="card">
+          <div class="stat-label">พนักงานทั้งหมด</div>
+          <div class="stat-value">128 <span class="unit">คน</span></div>
+          <div class="stat-delta up">▲ 3 คนจากเดือนก่อน</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">เข้างานวันนี้</div>
+          <div class="stat-value">112 <span class="unit">/ 128</span></div>
+          <div class="stat-delta up">87.5% ของพนักงานทั้งหมด</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">คำขอลารออนุมัติ</div>
+          <div class="stat-value">7 <span class="unit">รายการ</span></div>
+          <div class="stat-delta warn">รออนุมัติเกิน 2 วัน: 2 รายการ</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">เงินเดือนรอบนี้</div>
+          <div class="stat-value mono">3.84 <span class="unit">ล้านบาท</span></div>
+          <div class="stat-delta up">จ่ายวันที่ 30 มิ.ย.</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">คำขอลาล่าสุด</div>
+          <div class="card-sub">รายการที่รอการพิจารณา</div>
+          <div class="req-row">
+            <div class="req-left">
+              <div class="avatar">ดว</div>
+              <div>
+                <div class="p-name">ดวงใจ วัฒนกุล</div>
+                <div class="req-meta">ลาป่วย · 28 มิ.ย. 2569 (1 วัน)</div>
+              </div>
+            </div>
+            <span class="badge warn"><i class="dot" style="background:var(--warn)"></i>รออนุมัติ</span>
+          </div>
+          <div class="req-row">
+            <div class="req-left">
+              <div class="avatar">ธว</div>
+              <div>
+                <div class="p-name">ธีรวัฒน์ ศรีสุข</div>
+                <div class="req-meta">ลากิจ · 1–2 ก.ค. 2569 (2 วัน)</div>
+              </div>
+            </div>
+            <span class="badge warn"><i class="dot" style="background:var(--warn)"></i>รออนุมัติ</span>
+          </div>
+          <div class="req-row">
+            <div class="req-left">
+              <div class="avatar">พร</div>
+              <div>
+                <div class="p-name">พรทิพย์ อินทร์แก้ว</div>
+                <div class="req-meta">ลาพักร้อน · 5–9 ก.ค. 2569 (5 วัน)</div>
+              </div>
+            </div>
+            <span class="badge ok"><i class="dot" style="background:var(--accent)"></i>อนุมัติแล้ว</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">วันครบกำหนดสำคัญ</div>
+          <div class="card-sub">7 วันข้างหน้า</div>
+          <div class="req-row">
+            <div>
+              <div class="p-name">ทดลองงานครบกำหนด</div>
+              <div class="req-meta">อภิสิทธิ์ บุญมา · 30 มิ.ย.</div>
+            </div>
+          </div>
+          <div class="req-row">
+            <div>
+              <div class="p-name">ครบสัญญาจ้าง</div>
+              <div class="req-meta">สุพิชชา โพธิ์งาม · 2 ก.ค.</div>
+            </div>
+          </div>
+          <div class="req-row">
+            <div>
+              <div class="p-name">วันเกิดพนักงาน</div>
+              <div class="req-meta">3 คน ในสัปดาห์นี้</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EMPLOYEES -->
+    <section class="page" id="page-employees">
+      <div class="page-head">
+        <div>
+          <div class="page-title">พนักงาน</div>
+          <div class="page-date">128 คน · 6 แผนก</div>
+        </div>
+        <button class="btn">+ เพิ่มพนักงานใหม่</button>
+      </div>
+
+      <div class="toolbar">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input type="text" placeholder="ค้นหาชื่อ, รหัสพนักงาน, แผนก...">
+        </div>
+        <div class="filters">
+          <span class="chip active">ทั้งหมด</span>
+          <span class="chip">ฝ่ายขาย</span>
+          <span class="chip">ฝ่ายผลิต</span>
+          <span class="chip">ฝ่ายบุคคล</span>
+          <span class="chip">IT</span>
+        </div>
+      </div>
+
+      <div class="card" style="padding:0;">
+        <table>
+          <thead>
+            <tr>
+              <th style="padding-left:20px;">พนักงาน</th>
+              <th>รหัส</th>
+              <th>แผนก</th>
+              <th>ตำแหน่ง</th>
+              <th>วันเริ่มงาน</th>
+              <th>สถานะ</th>
+            </tr>
+          </thead>
+          <tbody id="emp-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- LEAVE / ATTENDANCE -->
+    <section class="page" id="page-leave">
+      <div class="page-head">
+        <div>
+          <div class="page-title">ลา / เข้างาน</div>
+          <div class="page-date">รอบเดือนมิถุนายน 2569</div>
+        </div>
+        <button class="btn">+ ขอลา</button>
+      </div>
+
+      <div class="leave-cards">
+        <div class="leave-type-card">
+          <div class="leave-type-top">
+            <div>
+              <div class="card-title" style="margin-bottom:2px;">ลาพักร้อน</div>
+              <div class="card-sub" style="margin-bottom:0;">ใช้ไป 4 จาก 10 วัน</div>
+            </div>
+            <div class="leave-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v6M12 3a6 6 0 0 1 6 6c0 4-6 12-6 12S6 13 6 9a6 6 0 0 1 6-6z"/></svg>
+            </div>
+          </div>
+          <div class="leave-bar-track"><div class="leave-bar-fill" style="width:40%"></div></div>
+        </div>
+        <div class="leave-type-card">
+          <div class="leave-type-top">
+            <div>
+              <div class="card-title" style="margin-bottom:2px;">ลาป่วย</div>
+              <div class="card-sub" style="margin-bottom:0;">ใช้ไป 2 จาก 30 วัน</div>
+            </div>
+            <div class="leave-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M19 14c1.5-1.4 2-2.7 2-4a5 5 0 0 0-9-3 5 5 0 0 0-9 3c0 4 5 8 9 11 1.2-.9 2.3-1.8 3.3-2.7"/><path d="M9 11h2l1-2 2 4 1-2h2"/></svg>
+            </div>
+          </div>
+          <div class="leave-bar-track"><div class="leave-bar-fill" style="width:7%"></div></div>
+        </div>
+        <div class="leave-type-card">
+          <div class="leave-type-top">
+            <div>
+              <div class="card-title" style="margin-bottom:2px;">ลากิจ</div>
+              <div class="card-sub" style="margin-bottom:0;">ใช้ไป 1 จาก 5 วัน</div>
+            </div>
+            <div class="leave-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </div>
+          </div>
+          <div class="leave-bar-track"><div class="leave-bar-fill" style="width:20%"></div></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">คำขอลาที่รอดำเนินการ</div>
+          <div class="card-sub">อนุมัติหรือปฏิเสธคำขอ</div>
+
+          <div class="req-row">
+            <div class="req-left">
+              <div class="avatar">ดว</div>
+              <div>
+                <div class="p-name">ดวงใจ วัฒนกุล</div>
+                <div class="req-meta">ลาป่วย · 28 มิ.ย. 2569 · 1 วัน</div>
+              </div>
+            </div>
+            <div class="req-actions">
+              <div class="icon-btn approve" title="อนุมัติ"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div>
+              <div class="icon-btn reject" title="ปฏิเสธ"><svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+            </div>
+          </div>
+          <div class="req-row">
+            <div class="req-left">
+              <div class="avatar">ธว</div>
+              <div>
+                <div class="p-name">ธีรวัฒน์ ศรีสุข</div>
+                <div class="req-meta">ลากิจ · 1–2 ก.ค. 2569 · 2 วัน</div>
+              </div>
+            </div>
+            <div class="req-actions">
+              <div class="icon-btn approve" title="อนุมัติ"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div>
+              <div class="icon-btn reject" title="ปฏิเสธ"><svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+            </div>
+          </div>
+          <div class="req-row">
+            <div class="req-left">
+              <div class="avatar">ก ส</div>
+              <div>
+                <div class="p-name">กันต์ สมพงษ์</div>
+                <div class="req-meta">ลาพักร้อน · 10–11 ก.ค. 2569 · 2 วัน</div>
+              </div>
+            </div>
+            <div class="req-actions">
+              <div class="icon-btn approve" title="อนุมัติ"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div>
+              <div class="icon-btn reject" title="ปฏิเสธ"><svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">บันทึกเวลาเข้า-ออกล่าสุด</div>
+          <div class="card-sub">วันนี้</div>
+          <div class="req-row">
+            <div class="req-left">
+              <div class="avatar">อภ</div>
+              <div>
+                <div class="p-name">อภิสิทธิ์ บุญมา</div>
+                <div class="req-meta mono">เข้า 08:52 · ออก —</div>
+              </div>
+            </div>
+            <span class="badge ok"><i class="dot" style="background:var(--accent)"></i>ปกติ</span>
+          </div>
+          <div class="req-row">
+            <div class="req-left">
+              <div class="avatar">สุ</div>
+              <div>
+                <div class="p-name">สุพิชชา โพธิ์งาม</div>
+                <div class="req-meta mono">เข้า 09:21 · ออก —</div>
+              </div>
+            </div>
+            <span class="badge danger"><i class="dot" style="background:var(--danger)"></i>เข้าสาย</span>
+          </div>
+          <div class="req-row">
+            <div class="req-left">
+              <div class="avatar">วร</div>
+              <div>
+                <div class="p-name">วราภรณ์ ใจดี</div>
+                <div class="req-meta">ลาป่วยทั้งวัน</div>
+              </div>
+            </div>
+            <span class="badge warn"><i class="dot" style="background:var(--warn)"></i>ลา</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAYROLL -->
+    <section class="page" id="page-payroll">
+      <div class="page-head">
+        <div>
+          <div class="page-title">เงินเดือน</div>
+          <div class="page-date">รอบจ่าย: 30 มิถุนายน 2569</div>
+        </div>
+        <button class="btn">ดำเนินการจ่ายเงินเดือน</button>
+      </div>
+
+      <div class="payroll-summary">
+        <div class="card">
+          <div class="stat-label">ยอดจ่ายรวมรอบนี้</div>
+          <div class="stat-value mono">3,841,200 <span class="unit">บาท</span></div>
+          <div class="stat-delta up">128 คน</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">ภาษีหัก ณ ที่จ่าย</div>
+          <div class="stat-value mono">186,400 <span class="unit">บาท</span></div>
+          <div class="stat-delta">นำส่งสรรพากรภายใน 7 ก.ค.</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">ประกันสังคม (รวม)</div>
+          <div class="stat-value mono">115,236 <span class="unit">บาท</span></div>
+          <div class="stat-delta">นายจ้าง + ลูกจ้าง</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card" style="padding:0;">
+          <div style="padding:18px 20px 0 20px;">
+            <div class="card-title">สลิปเงินเดือนพนักงาน</div>
+            <div class="card-sub">รอบมิถุนายน 2569</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="padding-left:20px;">พนักงาน</th>
+                <th>เงินเดือนพื้นฐาน</th>
+                <th>หักรวม</th>
+                <th>รับสุทธิ</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="payroll-table-body"></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-title">สถานะการดำเนินการจ่าย</div>
+          <div class="card-sub">อัปเดตล่าสุด 09:40</div>
+          <div class="progress-row">
+            <div class="progress-label">ตรวจสอบข้อมูล</div>
+            <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
+            <div class="progress-val">128/128</div>
+          </div>
+          <div class="progress-row">
+            <div class="progress-label">อนุมัติโดยหัวหน้า</div>
+            <div class="progress-track"><div class="progress-fill" style="width:92%"></div></div>
+            <div class="progress-val">118/128</div>
+          </div>
+          <div class="progress-row">
+            <div class="progress-label">โอนเข้าธนาคาร</div>
+            <div class="progress-track"><div class="progress-fill" style="width:0%"></div></div>
+            <div class="progress-val">รอดำเนินการ</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // ---- Navigation ----
+  const navItems = document.querySelectorAll('.nav-item');
+  const pages = document.querySelectorAll('.page');
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      navItems.forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+      pages.forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + item.dataset.page).classList.add('active');
+    });
+  });
+
+  // ---- Today timeline (signature element) ----
+  const names = ["อภ","สุ","วร","ดว","ธว","กส","พร","นจ","ชย","รต","มล","ปว","ทศ","สม","ฐา","อร","บว","ลด","หท","จร","กม","ศร","ยศ","วฑ"];
+  const states = ["in","in","in","in","late","leave","in","in","in","out","in","in","leave","in","in","in","late","in","in","in","leave","in","in","in"];
+  const tips = {
+    in: "เข้างานปกติ",
+    leave: "ลาวันนี้",
+    late: "เข้างานสาย",
+    out: "ยังไม่บันทึกเข้างาน"
+  };
+  const timeline = document.getElementById('timeline');
+  names.forEach((n, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'tl-person';
+    const bar = document.createElement('div');
+    bar.className = 'tl-bar ' + states[i];
+    bar.setAttribute('data-tip', tips[states[i]]);
+    const label = document.createElement('div');
+    label.className = 'tl-init';
+    label.textContent = n;
+    wrap.appendChild(bar);
+    wrap.appendChild(label);
+    timeline.appendChild(wrap);
+  });
+
+  // ---- Employee table ----
+  const employees = [
+    ["พ ส","ปวริศา สมานมิตร","EMP-0142","ฝ่ายขาย","Sales Executive","12 ม.ค. 2566","active"],
+    ["ธว","ธีรวัฒน์ ศรีสุข","EMP-0098","ฝ่ายผลิต","หัวหน้าไลน์ผลิต","3 มี.ค. 2564","active"],
+    ["ดว","ดวงใจ วัฒนกุล","EMP-0155","ฝ่ายบุคคล","HR Officer","20 ส.ค. 2565","leave"],
+    ["อภ","อภิสิทธิ์ บุญมา","EMP-0210","IT","Frontend Developer","30 ก.ย. 2568","probation"],
+    ["สุ","สุพิชชา โพธิ์งาม","EMP-0061","ฝ่ายขาย","Sales Manager","2 ก.ค. 2562","active"],
+    ["วร","วราภรณ์ ใจดี","EMP-0177","ฝ่ายผลิต","QC Inspector","15 พ.ย. 2564","leave"],
+    ["กส","กันต์ สมพงษ์","EMP-0188","IT","Backend Developer","8 ก.พ. 2566","active"],
+    ["พร","พรทิพย์ อินทร์แก้ว","EMP-0033","บัญชี","Accountant","19 พ.ค. 2563","active"],
+    ["มล","มลฤดี แสงทอง","EMP-0205","ฝ่ายบุคคล","Recruiter","1 ธ.ค. 2568","probation"],
+    ["ชย","ชยพล ทองดี","EMP-0119","ฝ่ายผลิต","Operator","9 ก.ย. 2567","active"],
+  ];
+  const statusMap = {
+    active: ['ทำงานปกติ','ok'],
+    leave: ['อยู่ระหว่างลา','warn'],
+    probation: ['ทดลองงาน','neutral']
+  };
+  const empBody = document.getElementById('emp-table-body');
+  employees.forEach(([init,name,code,dept,role,start,status]) => {
+    const [label, cls] = statusMap[status];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="padding-left:20px;">
+        <div class="emp-table-name">
+          <div class="avatar">${init}</div>
+          <div>
+            <div class="p-name">${name}</div>
+            <div class="p-role">${role}</div>
+          </div>
+        </div>
+      </td>
+      <td class="mono">${code}</td>
+      <td>${dept}</td>
+      <td>${role}</td>
+      <td>${start}</td>
+      <td><span class="badge ${cls}"><i class="dot" style="background:currentColor"></i>${label}</span></td>
+    `;
+    empBody.appendChild(tr);
+  });
+
+  // ---- Payroll table ----
+  const payroll = [
+    ["ปว","ปวริศา สมานมิตร","32,000","3,840","28,160"],
+    ["ธว","ธีรวัฒน์ ศรีสุข","45,000","6,200","38,800"],
+    ["ดว","ดวงใจ วัฒนกุล","28,000","2,950","25,050"],
+    ["อภ","อภิสิทธิ์ บุญมา","38,000","4,100","33,900"],
+    ["สุ","สุพิชชา โพธิ์งาม","52,000","7,800","44,200"],
+  ];
+  const payBody = document.getElementById('payroll-table-body');
+  payroll.forEach(([init,name,base,deduct,net]) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="padding-left:20px;">
+        <div class="emp-table-name">
+          <div class="avatar">${init}</div>
+          <div class="p-name">${name}</div>
+        </div>
+      </td>
+      <td class="mono">${base}</td>
+      <td class="mono">${deduct}</td>
+      <td class="mono" style="font-weight:700;">${net}</td>
+      <td><span class="slip-link">ดูสลิป →</span></td>
+    `;
+    payBody.appendChild(tr);
+  });
+</script>
+
+</body>
+</html>
